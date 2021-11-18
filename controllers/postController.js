@@ -7,7 +7,32 @@ const getAllPost = async (req, res) => {
         res.status(200).json(posts);
 
     } catch (error) {
-        console("get posts error ", error);
+        console.log("get posts error ", error);
+        res.status(401).json({ message: "not found in database" });
+    }
+}
+
+const getPostById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const post = await Post.findById(id);
+        return res.status(200).json(post);
+    } catch (error) {
+        console.log("error get post id ", error)
+    }
+}
+
+const searchPostByText = async (req, res) => {
+    let { text } = req.query;
+    text = text.replace(/\s/g,"|")
+    console.log("query ",new RegExp(text))
+
+    try {
+        const posts = await Post.find({ title: { $regex: new RegExp(text) } });
+        res.status(200).json(posts);
+
+    } catch (error) {
+        console.log("get posts error ", error);
         res.status(401).json({ message: "not found in database" });
     }
 }
@@ -18,7 +43,7 @@ const createPost = async (req, res) => {
 
     //validate input
     if (!(title && title_image && category && content)) {
-        return res.status(401).json({ message: "data invalid" })
+        return res.status(400).json({ message: "data invalid" })
     }
 
     try {
@@ -32,9 +57,9 @@ const createPost = async (req, res) => {
             date_update: new Date()
         }
 
-        await Post.create(data);
+        const data_post = await Post.create(data);
 
-        return res.status(200).json({ message: "create post success" })
+        return res.status(200).json({ message: "create post success", data: data_post })
 
     } catch (error) {
         console.log("create post error", error);
@@ -42,7 +67,26 @@ const createPost = async (req, res) => {
     }
 }
 
+const deletePost = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const data = await Post.findByIdAndDelete(id);
+        if(!data) {
+            res.status(400).json({ message: "not found post id " + id})
+        }
+        else {
+            res.status(200).json({ message: "delete post success"})
+        }
+     
+    } catch (error) {
+        console.log("error ",error)
+    }   
+}
+
 module.exports = {
     getAllPost,
-    createPost
+    createPost,
+    deletePost,
+    getPostById,
+    searchPostByText
 }
